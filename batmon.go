@@ -8,20 +8,37 @@ type battery struct {
 	name  string
 	path  string
 	ready bool
+	sys   batmonitor
 }
 type batmonitor struct {
-	dpath string
+	dpath   string
+	bats    []battery
+	mainbat int
 }
 
-func (sys batmonitor) getbats() []battery {
-	files, c := ioutil.ReadDir(sys.dpath)
-	fmt.Println(c)
-	bats := make([]battery, len(files))
-	for c, f := range files {
-		fmt.Println(c)
-		bats[c].name = f.Name()
+func (sys *batmonitor) getbats() ([]battery, error) {
+	files, e := ioutil.ReadDir(sys.dpath)
+	if e != nil {
+		return nil, e
 	}
-	return bats
+	sys.bats = make([]battery, len(files))
+	for c, f := range files {
+		sys.bats[c].name = f.Name()
+		sys.bats[c].num = c
+		sys.bats[c].sys = *sys
+	}
+	return sys.bats, nil
+}
+func (sys batmonitor) listbats() {
+	for c := range sys.bats {
+		fmt.Println(sys.bats[c])
+	}
+}
+func (bat battery) String() string {
+	return fmt.Sprintf("num:%d\t cap:%d\t name:%s", bat.num, bat.capacity(), bat.name)
+}
+func (bat battery) capacity() int {
+	return 100
 }
 func (bat *battery) setpath(sys batmonitor) {
 	if bat.name != "" {
@@ -34,9 +51,7 @@ func (bat *battery) setpath(sys batmonitor) {
 
 func main() {
 	system := batmonitor{dpath: "/sys/class/power_supply/"}
-	curbat := battery{name: "BAT1"}
-	curbat.setpath(system)
+	system.getbats()
+	system.listbats()
 
-	fmt.Println(curbat.path)
-	fmt.Println("hello world")
 }
