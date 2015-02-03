@@ -6,7 +6,6 @@ import "io/ioutil"
 type battery struct {
 	num   int
 	name  string
-	path  string
 	ready bool
 	sys   batmonitor
 }
@@ -16,6 +15,11 @@ type batmonitor struct {
 	mainbat int
 }
 
+func eprint(lvl int, a ...interface{}) {
+	if lvl > 0 {
+		fmt.Println(a)
+	}
+}
 func (sys *batmonitor) getbats() ([]battery, error) {
 	files, e := ioutil.ReadDir(sys.dpath)
 	if e != nil {
@@ -38,15 +42,25 @@ func (bat battery) String() string {
 	return fmt.Sprintf("num:%d\t cap:%d\t name:%s", bat.num, bat.capacity(), bat.name)
 }
 func (bat battery) capacity() int {
+	acp, e := ioutil.ReadFile(bat.path() + "/capacity")
+	acp = acp
+	if e != nil {
+		eprint(1, e)
+	}
 	return 100
 }
-func (bat *battery) setpath(sys batmonitor) {
+func (bat *battery) path() string {
 	if bat.name != "" {
-		bat.path = sys.dpath + bat.name
+		return bat.sys.dpath + bat.name
 	} else {
-
+		files, e := ioutil.ReadDir(bat.sys.dpath)
+		if e != nil {
+			eprint(1, e)
+			return ""
+		}
+		bat.name = files[bat.num].Name()
+		return bat.sys.dpath + bat.name
 	}
-	bat.ready = true
 }
 
 func main() {
