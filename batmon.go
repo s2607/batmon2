@@ -2,6 +2,7 @@ package main
 
 import "fmt"
 import "io/ioutil"
+import "strconv"
 
 type battery struct {
 	num   int
@@ -16,7 +17,7 @@ type batmonitor struct {
 }
 
 func eprint(lvl int, a ...interface{}) {
-	if lvl > 0 {
+	if lvl > 0 && a != nil && a[0] != nil {
 		fmt.Println(a)
 	}
 }
@@ -46,8 +47,11 @@ func (bat battery) capacity() int {
 	acp = acp
 	if e != nil {
 		eprint(1, e)
+		return -1
 	}
-	return 100
+	i, e := strconv.ParseInt(string(acp[0:len(acp)-1]), 0, 32)
+	eprint(1, e)
+	return int(i)
 }
 func (bat *battery) path() string {
 	if bat.name != "" {
